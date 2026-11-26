@@ -1,28 +1,67 @@
-# Project Template: Django + Next.js + Tailwind CSS
+# AI Models Evaluator
 
-A minimal full-stack starter:
+A web app for comparing AI models head to head. Give two models (for example **Codex** and **Claude**) the same prompt, paste both responses side by side, score them, and pick a winner. Every comparison is saved, and a leaderboard tracks which model wins most often and scores highest over time.
 
-- `backend/` is a Django 5.2 API (Django REST Framework, CORS enabled)
-- `frontend/` is Next.js (App Router, TypeScript) styled with Tailwind CSS v4
+![Evaluating two responses side by side](docs/screenshots/evaluate.jpg)
 
-## Structure
+![Leaderboard and evaluation history](docs/screenshots/leaderboard-history.png)
+
+## Features
+
+- **Side-by-side comparison:** one prompt, two response panels, each with its own model picker and a live character and word count.
+- **Scoring:** rate each response from 1 to 10, then mark Model A, Model B, or a tie as the winner. The winning panel is highlighted.
+- **Notes:** record why one answer was better, or any bugs you spotted.
+- **Swap A / B:** flip both sides (models, responses, scores and winner) in one click.
+- **Leaderboard:** wins, losses, ties, win rate and average score for each model, best first.
+- **History:** recent evaluations. Click one to see both responses and the notes, or delete it.
+- **CSV export:** download every evaluation to analyse in Excel or Google Sheets.
+- **Model management:** Codex and Claude come preinstalled. Add, rename or retire models in the Django admin.
+- **Validation:** the API rejects empty prompts, scores outside 1–10, unknown models, and comparisons of a model against itself. Errors are shown in the UI.
+
+The app does not call the models for you. Run the prompt in each model yourself and paste the responses in.
+
+## Tech stack
+
+| Part | Technology |
+| --- | --- |
+| Backend | Django 5.2, Django REST Framework, SQLite, django-cors-headers |
+| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4 |
+
+## Project structure
 
 ```
 .
 ├── backend/
-│   ├── config/          # Django project settings, root urls
-│   ├── api/             # Starter app with a /api/health/ endpoint
+│   ├── config/                 # Django settings and root URLs
+│   ├── api/
+│   │   ├── models.py           # AIModel and Evaluation
+│   │   ├── serializers.py      # Validation rules
+│   │   ├── views.py            # Evaluations, leaderboard, CSV export
+│   │   ├── urls.py
+│   │   ├── admin.py
+│   │   ├── migrations/         # Includes the Codex/Claude seed
+│   │   └── tests.py
 │   ├── manage.py
 │   ├── requirements.txt
 │   └── .env.example
-└── frontend/
-    ├── app/             # Next.js App Router pages
-    ├── lib/api.ts       # Small fetch helper for the Django API
-    ├── package.json
-    └── .env.local.example
+├── frontend/
+│   ├── app/page.tsx            # Home page
+│   ├── components/
+│   │   ├── Evaluator.tsx       # Prompt, both panels, winner, save
+│   │   ├── ModelCard.tsx       # One model's response panel
+│   │   ├── Leaderboard.tsx
+│   │   ├── EvaluationHistory.tsx
+│   │   └── ApiStatus.tsx       # Backend connection indicator
+│   ├── lib/api.ts              # Typed API client
+│   └── .env.local.example
+└── docs/screenshots/
 ```
 
-## 1. Run the backend
+## Getting started
+
+You need Python 3.12+ and Node.js 20+.
+
+### 1. Run the backend
 
 ```bash
 cd backend
@@ -35,9 +74,11 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-The API runs at http://127.0.0.1:8000. Check http://127.0.0.1:8000/api/health/
+The API runs at http://127.0.0.1:8000. `migrate` also adds the Codex and Claude models.
 
-## 2. Run the frontend
+To manage models in the admin, create an account with `python manage.py createsuperuser` and open http://127.0.0.1:8000/admin/.
+
+### 2. Run the frontend
 
 In a second terminal:
 
@@ -48,16 +89,19 @@ copy .env.local.example .env.local   # macOS/Linux: cp .env.local.example .env.l
 npm run dev
 ```
 
-Open http://localhost:3000. The home page calls the Django health endpoint and shows whether it is connected.
+Open http://localhost:3000. The bar at the bottom of the page shows whether the frontend can reach the backend.
 
-## Features
+## How to use it
 
-- **Side-by-side evaluation:** enter a prompt, paste each model's response, score each 1–10, pick a winner (or tie), add notes, and save. "Swap A / B" flips the two sides.
-- **Leaderboard:** wins / losses / ties, win rate, and average score per model.
-- **History:** recent evaluations, expandable to show both responses, with delete and "Export CSV" (all evaluations, opens in Excel or Google Sheets).
-- **Model list from the API:** `Codex` and `Claude` are seeded by a migration. Add or retire models in Django admin (`python manage.py createsuperuser`, then http://127.0.0.1:8000/admin/).
+1. Type the prompt you gave both models.
+2. Choose a model for each panel and paste its response.
+3. Give each response a score and pick the winner (or Tie). Add notes if you like.
+4. Click **Save evaluation**. The leaderboard and history update straight away.
+5. Click **Export CSV** to download all your results.
 
 ## API
+
+All endpoints are under `http://127.0.0.1:8000/api/`.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -68,11 +112,29 @@ Open http://localhost:3000. The home page calls the Django health endpoint and s
 | GET | `/api/evaluations/export/` | Download all evaluations as CSV |
 | GET | `/api/leaderboard/` | Per-model stats, best first |
 
-Run the backend tests with `python manage.py test`.
+Example: create an evaluation.
 
-## Adding things
+```bash
+curl -X POST http://127.0.0.1:8000/api/evaluations/ -H "Content-Type: application/json" -d "{\"prompt\": \"Reverse a string\", \"model_a\": \"Codex\", \"response_a\": \"s[::-1]\", \"score_a\": 7, \"model_b\": \"Claude\", \"response_b\": \"''.join(reversed(s))\", \"score_b\": 8, \"winner\": \"B\", \"notes\": \"\"}"
+```
 
-- **New API endpoint:** add a view in `backend/api/views.py` and register it in `backend/api/urls.py`.
-- **New Django app:** `python manage.py startapp <name>`, then add it to `INSTALLED_APPS` in `backend/config/settings.py`.
-- **New page:** create `frontend/app/<route>/page.tsx`.
-- **Call the API:** use `apiFetch("/api/your-endpoint/")` from `frontend/lib/api.ts`.
+`winner` is `"A"`, `"B"`, `"tie"`, or `""` (undecided). Scores are 1–10 or `null`.
+
+## Configuration
+
+| File | Variable | Default |
+| --- | --- | --- |
+| `backend/.env` | `DJANGO_SECRET_KEY` | dev key (change it for production) |
+| `backend/.env` | `DJANGO_DEBUG` | `True` |
+| `backend/.env` | `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` |
+| `backend/.env` | `CORS_ALLOWED_ORIGINS` | `http://localhost:3000,http://127.0.0.1:3000` |
+| `frontend/.env.local` | `NEXT_PUBLIC_API_URL` | `http://127.0.0.1:8000` |
+
+## Tests
+
+```bash
+cd backend
+python manage.py test
+```
+
+The tests cover the model list, validation, filtering, deletion, the leaderboard maths and the CSV export.
