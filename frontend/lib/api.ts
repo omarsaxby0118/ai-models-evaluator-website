@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+export const API_URL =process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 export class ApiError extends Error {
   constructor(
@@ -67,4 +67,5 @@ export const api = {
   deleteEvaluation: (id: number) =>
     apiFetch<void>(`/api/evaluations/${id}/`, { method: "DELETE" }),
   leaderboard: () => apiFetch<LeaderboardRow[]>("/api/leaderboard/"),
+  exportCsvUrl: `${API_URL}/api/evaluations/export/`,
 };

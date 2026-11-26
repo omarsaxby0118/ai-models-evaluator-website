@@ -54,7 +54,7 @@ Open http://localhost:3000. The home page calls the Django health endpoint and s
 
 - **Side-by-side evaluation:** enter a prompt, paste each model's response, score each 1–10, pick a winner (or tie), add notes, and save. "Swap A / B" flips the two sides.
 - **Leaderboard:** wins / losses / ties, win rate, and average score per model.
-- **History:** recent evaluations, expandable to show both responses, with delete.
+- **History:** recent evaluations, expandable to show both responses, with delete and "Export CSV" (all evaluations, opens in Excel or Google Sheets).
 - **Model list from the API:** `Codex` and `Claude` are seeded by a migration. Add or retire models in Django admin (`python manage.py createsuperuser`, then http://127.0.0.1:8000/admin/).
 
 ## API
@@ -65,6 +65,7 @@ Open http://localhost:3000. The home page calls the Django health endpoint and s
 | GET | `/api/models/` | Active models |
 | GET, POST | `/api/evaluations/` | List (`?limit=N`, `?model=Name`) or create |
 | GET, PUT, PATCH, DELETE | `/api/evaluations/<id>/` | Read, update, or delete one evaluation |
+| GET | `/api/evaluations/export/` | Download all evaluations as CSV |
 | GET | `/api/leaderboard/` | Per-model stats, best first |
 
 Run the backend tests with `python manage.py test`.

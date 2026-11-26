@@ -1,3 +1,6 @@
+import csv
+import io
+
 from django.test import TestCase
 from django.urls import reverse
 
@@ -73,6 +76,24 @@ class EvaluationTests(TestCase):
         response = self.client.delete(reverse("evaluation-detail", args=[ev.id]))
         self.assertEqual(response.status_code, 204)
         self.assertEqual(Evaluation.objects.count(), 1)
+
+
+class ExportTests(TestCase):
+    def test_csv_export(self):
+        codex = AIModel.objects.get(name="Codex")
+        claude = AIModel.objects.get(name="Claude")
+        Evaluation.objects.create(
+            prompt='Multi-line, "quoted"\nprompt', model_a=codex, model_b=claude, winner="B", score_b=9
+        )
+        response = self.client.get(reverse("evaluation-export"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("attachment", response["Content-Disposition"])
+        rows = list(csv.reader(io.StringIO(response.content.decode("utf-8-sig"))))
+        self.assertEqual(rows[0][:3], ["id", "created_at", "prompt"])
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[1][2], 'Multi-line, "quoted"\nprompt')
+        self.assertEqual(rows[1][3], "Codex")
+        self.assertEqual(rows[1][9], "B")
 
 
 class LeaderboardTests(TestCase):

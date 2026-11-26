@@ -10,5 +10,6 @@ router.register("evaluations", views.EvaluationViewSet, basename="evaluation")
 urlpatterns = [
     path("health/", views.health, name="health"),
     path("leaderboard/", views.leaderboard, name="leaderboard"),
+    path("evaluations/export/", views.export_evaluations, name="evaluation-export"),
     path("", include(router.urls)),
 ]

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Evaluation } from "@/lib/api";
+import { api, type Evaluation } from "@/lib/api";
 
 type Props = {
   evaluations: Evaluation[];
@@ -20,7 +20,18 @@ export default function EvaluationHistory({ evaluations, onDelete }: Props) {
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="mb-3 text-lg font-semibold">Recent evaluations</h2>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">Recent evaluations</h2>
+        {evaluations.length > 0 && (
+          <a
+            href={api.exportCsvUrl}
+            download
+            className="rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-50"
+          >
+            Export CSV
+          </a>
+        )}
+      </div>
       {evaluations.length === 0 ? (
         <p className="text-sm text-slate-500">Nothing saved yet. Save your first comparison above.</p>
       ) : (
